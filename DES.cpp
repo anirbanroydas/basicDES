@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 	  return 1;      
 	 }
 	
-	if ( (strcmp(argv[1],"-E")!=0) || (strcmp(argv[1],"-D")!=0) )
+	if ( (strcmp(argv[1],"-E")!=0) && (strcmp(argv[1],"-D")!=0) )
 	{
 		printf("\n%s no such valid argument known\n", argv[1]);
 		return 1;      
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 	   
  
 		char *bufferI, *bufferO,  *pos;
-		char  *filename1;
+		/*char  *filename1;
 		
 		filename1=argv[2];
 		int i=0;
@@ -170,13 +170,13 @@ int main(int argc, char *argv[])
 			filename1[i]=argv[2][i];
 			i++;
 		}
-		
+		*/
 		
 	//	filename[i]='\0';
 		
 		
  		input.open(argv[2], ios::in | ios::binary);
-		output.open(filename1, ios::out | ios::app);
+		output.open("out", ios::out | ios::app);
  
 
     	input.seekg(0, ios::end);  // position get-ptr 0 bytes from end
