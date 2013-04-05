@@ -67,12 +67,14 @@ int key[64]= {
 int size;
 int blocksize = 8 ;
 //int bs=blocksize*8;
-char plainText[64],cypherText[64];
+int plainText[64],cypherText[64];
 int c[28],d[28],pc1[56],KEY[16][48];
 int L[32],R[32],R2[48],xor1[48],xor2[32],sub[32],p[32];
+ifstream input;
+ofstream output;
 
-char *Encrypt(char *buffer);
-char *Decrypt(char *buffer);
+int Encrypt(char *buffer);
+int Decrypt(char *buffer);
 void keygen();
 void permutedChoice1();
 void leftShift(int n);
@@ -88,12 +90,11 @@ void permutation();
 void swap32bit();
 void inversePermutation();
 
-
+char *bufferO;
 
 int main(int argc, char *argv[])
 { 
-	ifstream input;
-	ofstream output;	
+		
 	if(argc<3 || argc>3) 
 	 {
 	  printf("\n Correct no. of Arguments required :  DES -E(-D) filename \n");
@@ -116,7 +117,7 @@ int main(int argc, char *argv[])
    if( strcmp(argv[1],"-E")==0)
    {
 	    int len;
-        char *bufferI, *bufferO;
+        char *bufferI ;
 
         len=strlen(argv[2]);
 		
@@ -129,21 +130,35 @@ int main(int argc, char *argv[])
 		filename[len]='s';
 		
  		input.open(argv[2], ios::in | ios::binary);
-		output.open(filename, ios::out | ios::app);
+		output.open(filename, ios::out);
  
 
     	input.seekg(0, ios::end);  // position get-ptr 0 bytes from end
     	size = input.tellg();  // get-ptr position is now same as file size
     	input.seekg(0, ios::beg);  // position get-ptr 0 bytes from beginning
 
+        cout<<endl<<" size of input :  "<<size;
+
     	bufferI = new char [size];
-    	bufferO = new char [size];
+    	bufferO = new char [size+8];
 
     	input.read (bufferI,size);
+        cout<<endl<<endl<<"input : "<<endl;
+		puts(bufferI);
+	//	bufferO = 
+	    size=Encrypt(bufferI);
+		cout<<endl<<" buffer before writing : "<<endl;
+		cout<<endl<<"buffer [1] : "<<bufferO[1];
+		cout<<endl<<"buffer [3] : "<<bufferO[3];
+		cout<<endl<<"buffer [4] : "<<bufferO[4];
+		cout<<endl<<"buffer [7] : "<<bufferO[7];
+		for (int w=(size-18);w>=0-;w--)
+			cout<<bufferO[w];
+		
+	//	cout<<endl<<endl<<"output:"<<endl;
+	//		puts(bufferO);
 
-		bufferO = Encrypt(bufferI);
-
-    	output.write(bufferO,size);
+        output.write(bufferO,size);
 
  		// release dynamically-allocated memory
    		delete[] bufferI;
@@ -158,7 +173,7 @@ int main(int argc, char *argv[])
     {
 	   
  
-		char *bufferI, *bufferO,  *pos;
+		char *bufferI,  *pos;
 		/*char  *filename1;
 		
 		filename1=argv[2];
@@ -176,7 +191,7 @@ int main(int argc, char *argv[])
 		
 		
  		input.open(argv[2], ios::in | ios::binary);
-		output.open("out", ios::out | ios::app);
+		output.open("out", ios::out);
  
 
     	input.seekg(0, ios::end);  // position get-ptr 0 bytes from end
@@ -184,19 +199,34 @@ int main(int argc, char *argv[])
     	input.seekg(0, ios::beg);  // position get-ptr 0 bytes from beginning
 
     	bufferI = new char [size];
-    	bufferO = new char [size];
+    	bufferO = new char [size+8];
+		cout<<endl<<" size of input :  "<<size;
 
     	input.read (bufferI,size);
-
+         	cout<<endl<<endl<<"input : "<<endl;
+		puts(bufferI);
  
-		bufferO = Decrypt(bufferI);
+		//bufferO =
+		 size=Decrypt(bufferI);
+		cout<<endl<<" buffer before writing : "<<endl;
+			cout<<endl<<" buffer before writing : "<<endl;
+		cout<<endl<<"buffer [1] : "<<bufferO[1];
+		cout<<endl<<"buffer [3] : "<<bufferO[3];
+		cout<<endl<<"buffer [4] : "<<bufferO[4];
+		cout<<endl<<"buffer [7] : "<<bufferO[7];
+		
+		for (int w=7;w<size;w++)
+			cout<<bufferO[w];	
+
+//	cout<<endl<<endl<<"output:"<<endl;
+//			puts(bufferO);
 
     	
-        output.write(bufferO,size);
+       output.write(bufferO,size);
 
  		// release dynamically-allocated memory
    		delete[] bufferI;
-   		delete[] bufferO;
+   	    delete[] bufferO;
 
 	
 	
@@ -211,13 +241,16 @@ int main(int argc, char *argv[])
 }
 
 
-char *Encrypt(char *buffer)
+int Encrypt(char *buffer)
 {
 	int len,temp,i,j,k,ptr,ptr2,ptr3,ascii,index, binary[8];
-    char *tempbuffer=new char[size];
-	char *bufferO= new char[size];
+    char *tempbuffer=new char[size+8];
+	char *OutputBuffer= new char[size+8];
+	unsigned char ch,ch2;
     
     strcpy(tempbuffer,buffer);
+	cout<<endl<<"tempbuffer :"<<endl;
+	puts(tempbuffer);
     len=strlen(tempbuffer);
     temp = len % blocksize ;
     
@@ -227,12 +260,12 @@ char *Encrypt(char *buffer)
 	          tempbuffer[len++]= ' ' ;
      
         
-        tempbuffer[len]='\0';
+       // tempbuffer[len]='\0';
         len= strlen(tempbuffer);
       }
 
 
-
+    
     keygen();
     
 	
@@ -245,27 +278,39 @@ char *Encrypt(char *buffer)
 		ptr2=0;
 	    
         for(j=0; j< blocksize; j++)
-        {
-            ascii = (int) tempbuffer [ptr++];
+		{   ch=tempbuffer[ptr++];
+            ascii = (int) ch;
 			index=7;
+			cout<<endl<<ascii;
             while(ascii>0)
             {
                 binary[index--]=ascii % 2;  //Converting 8-Bytes to 64-bit Binary Format
                 ascii= ascii/2;
             }
-            
-
-            while(index>=0)
+		    
+		    while(index>=0)
 				binary[index--] = 0;
+			
+			cout<<endl;
+			for(int w=0;w<8;w++)
+			{
+				cout<<binary[w];
+				
+			}
             
 
             for(k=0; k<8; k++) 
                 plainText[ptr2++]= binary [k]; //Now `total' contains the 64-Bit binary format of 8-Bytes
+            
+			cout<<endl<<"plainText : "<<endl;
+			for (int z=0;z<ptr2;z++)
+				cout<<plainText[z];
         
         }
 
-      
+		cout<<endl<<"entering initialPermutation()"<<endl;
         initialPermutation() ;
+        cout<<endl<<"exiting initialPermutation()"<<endl;
 
 		for ( j =1 ; j<=16 ; j++)
 		{
@@ -273,53 +318,85 @@ char *Encrypt(char *buffer)
 		
 		}
 		
+		cout<<endl<<"plainText Before swapping : "<<endl;
+		for (int w=0;w<64;w++)
+			cout<<plainText[w];
+		
 		
 		swap32bit() ;
 		
 		inversePermutation() ;
 		
 		ptr2=0;
-		index=7;
+		
+		
 		ascii=0;
 		
+		cout<<endl<<"Calculating ascci values of block"<<i<<" : "<<endl;
 		 for(j=0; j< blocksize; j++)
-        {
+			{  index=128;
+				ascii=0;
+				 cout<<endl<<"character no.  :  "<<j+1<<endl<<"Ascii Value :  ";  
             for(k=0; k<8; k++)
             {
 				ascii = ascii + cypherText[ptr2++]*index;
-				index = index /2;
+				index = index/2;
             }
-            
-            bufferO[ptr3++] = (char) ascii;
+			cout<<ascii;
+			cout<<endl<<"Character : "<<(char)ascii;
+            OutputBuffer[ptr3++] = (char)ascii;
+            ch2=OutputBuffer[ptr3-1];
+			cout<<endl<<" ch2 : "<<ch2;
+			//output<<ch2;
+			bufferO[ptr3-1]=ch2;
+			cout<<endl<<"OutputBuffer : "<<OutputBuffer[ptr3-1];
             
         }
+		cout<<endl<<endl<<" Output Buffer :   "<<endl;
+		for (j=0;j<ptr3;j++)
+		{   ch = OutputBuffer[j];
+			ascii=(int)ch;
+				cout<<endl<<"  assci : "<<ascii<<"  char : "<<OutputBuffer[j];
+		}
+		
+	
+      
     }
 
-
-		return bufferO ;
+    cout<<endl<<endl<<" Final Output Buffer : length :  "<<ptr3<<endl;
+	for (j=0;j<ptr3;j++)
+		cout<<OutputBuffer[j];
+    //strcpy(	bufferO,OutputBuffer);
+     return ptr3 ;
 
 }
 
 
-char *Decrypt(char *buffer)
+int Decrypt(char *buffer)
 {
 	int len,temp,i,j,k,ptr,ptr2,ptr3,ascii,index, binary[8];
-    char *tempbuffer=new char[size];
-	char *bufferO= new char[size];
+    char *tempbuffer=new char[size+8];
+	char *OutputBuffer= new char[size+8];
+	unsigned char ch,ch2;
     
     strcpy(tempbuffer,buffer);
+    cout<<endl<<"tempbuffer :"<<endl;
+	puts(tempbuffer);
     len=strlen(tempbuffer);
     temp = len % blocksize ;
     
-    if(temp!=0) 
+   if(temp!=0) 
      {
 	    for (i=0; i<(blocksize-temp); i++) 
 	          tempbuffer[len++]= ' ' ;
      
         
-        tempbuffer[len]='\0';
+       // tempbuffer[len]='\0';
         len= strlen(tempbuffer);
       }
+	cout<<endl<<"Temp Buffer :"; 
+	for(i=0;i<len;i++)
+		cout<<tempbuffer[i];
 
 
 
@@ -335,14 +412,25 @@ char *Decrypt(char *buffer)
 		ptr2=0;
 	    
         for(j=0; j< blocksize; j++)
-        {
-            ascii = (int) tempbuffer [ptr++];
+		{   ch = tempbuffer[ptr++];
+			ascii = (int) ch;
+			cout<<endl<<"character : "<<ch<<endl<<"ascii : "<<ascii;
 			index=7;
             while(ascii>0)
             {
                 binary[index--]=ascii % 2;  //Converting 8-Bytes to 64-bit Binary Format
                 ascii= ascii/2;
             }
+
+            while(index>=0)
+				binary[index--]=0;
+             
+			cout<<endl<<"binary : ";
+            for(int w=0;w<8;w++)
+			{
+				cout<<binary[w];
+				
+			}
             
 
             while(index>=0)
@@ -351,42 +439,87 @@ char *Decrypt(char *buffer)
 
             for(k=0; k<8; k++) 
                 plainText[ptr2++]= binary [k]; //Now `total' contains the 64-Bit binary format of 8-Bytes
+    
+            cout<<endl<<"plainText : "<<endl;
+			for (int z=0;z<ptr2;z++)
+				cout<<plainText[z];
         
         }
 
       
+       	cout<<endl<<"entering initialPermutation()"<<endl;
         initialPermutation() ;
+        cout<<endl<<"exiting initialPermutation()"<<endl;
 
+        
 		for ( j =1 ; j<=16 ; j++)
 		{
 			encryptionRound(i) ;
 		
 		}
 		
-		
+			cout<<endl<<"plainText Before swapping : "<<endl;
+		for (int w=0;w<64;w++)
+			cout<<plainText[w];
+			
 		swap32bit() ;
 		
 		inversePermutation() ;
 		
 		ptr2=0;
-		index=7;
+		index=128;
 		ascii=0;
 		
-		 for(j=0; j< blocksize; j++)
-        {
+		cout<<endl<<"Calculating ascci values of block"<<i<<" : "<<endl;
+		
+	  /*	 for(j=0; j< blocksize; j++)
+		{   index=128;
+			ascii=0;
             for(k=0; k<8; k++)
             {
 				ascii = ascii + cypherText[ptr2++]*index;
 				index = index /2;
             }
             
-            bufferO[ptr3++] = (char) ascii;
+            OutputBuffer[ptr3++] = char(ascii);
             
         }
+  
+       */
+
+       for(j=0; j< blocksize; j++)
+			{  index=128;
+				ascii=0;
+				 cout<<endl<<"character no.  :  "<<j+1<<endl<<"Ascii Value :  ";  
+            for(k=0; k<8; k++)
+            {
+				ascii = ascii + cypherText[ptr2++]*index;
+				index = index/2;
+            }
+			cout<<ascii;
+			cout<<endl<<"Character : "<<(char)ascii;
+            OutputBuffer[ptr3++] = (char)ascii;
+			ch2=OutputBuffer[ptr3-1];
+			cout<<endl<<" ch2 : "<<ch2;
+		//	output<<ch2;
+			bufferO[ptr3-1]=ch2;
+			cout<<endl<<"OutputBuffer : "<<OutputBuffer[ptr3-1];
+            
+        }
+		cout<<endl<<" Output Buffer :   ";
+		for (j=0;j<ptr3;j++)
+			{   ch = OutputBuffer[j];
+			ascii=(int)ch;
+				cout<<endl<<"  assci : "<<ascii<<"  char : "<<OutputBuffer[j];
+		}
+
+    
     }
-
-
-		return bufferO ;
+	cout<<endl<<endl<<" Final Output Buffer :  ptr length : "<<ptr3<<endl;
+	for (j=0;j<ptr3;j++)
+		cout<<OutputBuffer[j];
+   // strcpy(	bufferO,OutputBuffer);
+     return ptr3 ;
 }
 
 
@@ -548,10 +681,14 @@ void initialPermutation() //Initial Permutation
             temp=temp+58;
     }
 
+	cout<<endl<<"after initial permutation- plainText : "<<endl;
 	for(i=0;i<64;i++)
 	{
 		plainText[i]=ip[i];
+		cout<<plainText[i];
 	}
+	
+	
 
 }
 
@@ -560,20 +697,34 @@ void initialPermutation() //Initial Permutation
 void encryptionRound(int n)
 {
 	int i,j=0;
+	cout<<endl<<"Left : "<<endl;
 	for(i=0;i<32;i++)
-		L[i]=plainText[j++];
+	  {	L[i]=plainText[j++];
+		cout<<L[i];
+	  }
+	cout<<endl<<"Right : "<<endl;
 	for(i=0;i<32;i++)
-		R[i]=plainText[j++];
+	   { R[i]=plainText[j++];
+		cout<<R[i];
+	   }
+	cout<<endl<<"entering F(n)"<<endl;
     F(n);
+    cout<<endl<<"exiting F(n)"<<endl;
+    cout<<endl<<"entering LxorF()"<<endl;
 	LxorF();
+	cout<<endl<<"exiting LxorF()"<<endl;
 	for(i=0;i<32;i++)
-		plainText[i]= R[i];
+	   { plainText[i]= R[i];
 		plainText[i+32] = xor2[i];
+	   }
+		
+//	for(i=0;i<64;i++)
+//			cout<<plainText[i];
 }
 
 
 void F(int n)
-{
+{   
 	expansion();
 	R2xorKey(n);
 	substitutionBox();
@@ -584,8 +735,12 @@ void F(int n)
 void LxorF()
 {
 	int i;
+	cout<<endl<<"LxorF : ";
     for(i=0; i<32; i++)
-        xor2[i]= L[i] ^ p[i];
+       { xor2[i]= L[i] ^ p[i];
+		cout<<xor2[i];
+	}
+       
 }
 
 void expansion()
@@ -606,15 +761,17 @@ void expansion()
 			}
 		}
 	}
-	exp[0][0]=R[0];
-	exp[7][5]=R[31];
+	exp[0][0]=R[31];
+	exp[7][5]=R[0];
 	
 	k=0;
+	cout<<endl<<"R2 : ";
 	for(i=0;i<8;i++)
 	{
 		for(j=0;j<6;j++)
 		{
 			R2[k++]=exp[i][j];
+			cout<<R2[k-1];
 		}
 	}
 	    
@@ -625,8 +782,11 @@ void expansion()
 void R2xorKey(int n)
 {
 	int i;
+	cout<<endl<<"R2 xor key  :  ";
     for(i=0; i<48; i++)
-        xor1[i]= R2[i] ^ KEY[n][i];
+       { xor1[i]= R2[i] ^ KEY[n][i];
+	     cout<<xor1[i];
+	   }
 }
 
 
@@ -702,7 +862,7 @@ void substitutionBox()
 	k=0;
 	n=0;
     for(i=0; i<8; i++)
-    {
+		{   cout<<endl<<"SubBox "<<i+1<<"  :  ";
         for(j=0; j<6; j++)
         {
             subBox[i][j]= xor1[k++];
@@ -745,6 +905,7 @@ void substitutionBox()
 		for(j=0;j<4;j++)
 		{
 			sub[n++]=b[j];
+			cout<<sub[n-1];
 		}
 	
 	}
@@ -794,6 +955,7 @@ void permutation()
 void swap32bit()
 {   
 	int i;
+	cout<<endl<<"entering swap32bit"<<endl<<"plainText after swaping : "<<endl;
 	for(i=0;i<32;i++)
 	{ 
 		L[i]=plainText[i];
@@ -803,6 +965,11 @@ void swap32bit()
 	{
 		plainText[i]=R[i];
 		plainText[i+32]=L[i];
+	}
+	for(i=0;i<64;i++)
+	{
+		cout<<plainText[i];
+	
 	}
 }
 
@@ -833,13 +1000,17 @@ void inversePermutation()
     }
 	
 	k=0;
+	cout<<endl<<"Cypher Text after inversePermutation :"<<endl;
 	for(i=0;i<blocksize;i++)
 	{
 		for(j=0;j<8;j++)
 		{
 			cypherText[k++] = invP[i][j];
+			cout<<cypherText[k-1];
 		}
 	}
+	
+	
 }
  
      
